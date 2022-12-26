@@ -382,6 +382,19 @@ class SettingsWindow(QDialog):
         appearance_settings.setLayout(appear_sl)
         stacked_widgets.append(('Appearance', appearance_settings))
 
+        # Death logger Settings
+        deaths_settings = QFrame()
+        dsl = QFormLayout()
+        dsl.addRow(SettingsHeader('general'))
+        discord_webhook_url = QLineEdit()
+        discord_webhook_url.setObjectName('deaths:discord_webhook_url')
+        dsl.addRow(
+            'Discord Webhook URL',
+            discord_webhook_url
+        )
+        deaths_settings.setLayout(dsl)
+        stacked_widgets.append(('Deaths', deaths_settings))
+
         return stacked_widgets
 
     def show_color_picker(self, window, preview):

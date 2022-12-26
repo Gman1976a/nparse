@@ -1,4 +1,5 @@
 import datetime
+import calendar
 import math
 import string
 import re
@@ -9,8 +10,9 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QProgressBar,
                              QScrollArea, QSpinBox, QVBoxLayout, QPushButton)
 
 from helpers import ParserWindow, config, format_time, text_time_to_seconds
+from discord import SyncWebhook
 
-WHO_MATCHER   = re.compile(r"^\[(?P<lvl>\d+) (?P<class>\S+)\] (?P<player>\S+)")
+WHO_MATCHER   = re.compile(r"^(AFK )*\[(?P<lvl>\d+) (?P<class>\S+)\] (?P<player>\S+)")
 ZONE_MATCHER  = re.compile(r"There (is|are) \d+ players? in (?P<zone>.+)\.")
 HAIL_MATCHER  = re.compile(r"^Hail, (?P<mobName>\S.+\S)\'s corpse")
 SLAIN_MATCHER = re.compile(r"^(?P<mobName>\S.+\S) has been slain by (?P<player>\S.+\S)!")
@@ -26,7 +28,7 @@ class Deaths(ParserWindow):
 
         # keep track of which mob dies when
         self.track = {}
-        self.playerName = None      # I don't think we have this already
+        self.playerName = "unknown"      # I don't think we have this already
         self.previousLine = ""
 
     def parse(self, timestamp, text):
@@ -83,16 +85,33 @@ class Deaths(ParserWindow):
             # if we have a registered death timestamp then we use that instead of the time of the
             # 'hail'
             if mobName in self.track:
-                print("1 sending: {0} died on {1} killed by {2}".format(
+                message = "{0} died on <t:{1}> killed by {2}".format(
                     mobName, 
-                    self.track[mobName]['timestamp'],
+                    self.logTimeToUnixSeconds(self.track[mobName]['timestamp']),
                     self.track[mobName]['killer'],
-                ))
+                )
             else:
-                print("2 sending: {0} died on {1} killed by {2}".format(
+                # we only know of the 'Hail' log message, no known time of death
+                message = "{0} corpse hailed by {1} on <t:{2}> killed by {3}".format(
                     mobName,
-                    timestamp,
+                    self.playerName,
+                    self.logTimeToUnixSeconds(timestamp),
                     "unknown"
-                ))
+                )
+
+            if config.data['deaths']['discord_webhook_url']:
+                # print("sending to "+config.data['deaths']['discord_webhook_url'])
+                try:
+                    webhook = SyncWebhook.from_url(config.data['deaths']['discord_webhook_url'])
+                    webhook.send(message)
+                except ValueError as e:
+                    print("wrong webhook URL")
+            else:
+                print("No discord webhook URL configured in settings")
 
         self.previousLine = text
+
+    def logTimeToUnixSeconds(self, timestamp: datetime.datetime) -> int:
+        delta = datetime.datetime.now()-datetime.datetime.utcnow() 
+        timestamp = timestamp - delta
+        return calendar.timegm(timestamp.timetuple())

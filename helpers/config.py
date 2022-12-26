@@ -265,6 +265,10 @@ def verify_settings():
         data['deaths'].get('toggled', True),
         False
         )
+    data['deaths']['discord_webhook_url'] = get_setting(
+        data['deaths'].get('discord_webhook_url', False),
+        ""
+        )
 
     # discord
     data['discord'] = data.get('discord', {})
