@@ -250,6 +250,22 @@ def verify_settings():
         False
     )
 
+    # deaths
+    data['deaths'] = data.get('deaths', {})
+    data['deaths']['clickthrough'] = get_setting(
+        data['deaths'].get('clickthrough', False),
+        False
+    )
+    data['deaths']['opacity'] = get_setting(
+        data['deaths'].get('opacity', 80),
+        80,
+        lambda x: (0 <= x <= 100)
+        )
+    data['deaths']['toggled'] = get_setting(
+        data['deaths'].get('toggled', True),
+        False
+        )
+
     # discord
     data['discord'] = data.get('discord', {})
     data['discord']['toggled'] = get_setting(
