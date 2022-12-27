@@ -17,6 +17,10 @@ ZONE_MATCHER  = re.compile(r"There (is|are) \d+ players? in (?P<zone>.+)\.")
 HAIL_MATCHER  = re.compile(r"^Hail, (?P<mobName>\S.+\S)\'s corpse")
 SLAIN_MATCHER = re.compile(r"^(?P<mobName>\S.+\S) has been slain by (?P<player>\S.+\S)!")
 
+DAYS_MATCHER  = re.compile(r"(?P<days>\d+)\s*days")
+HOURS_MATCHER = re.compile(r"(?P<hours>\d+)\s*hour")
+MINS_MATCHER = re.compile(r"(?P<minutes>\d+)\s*min")
+
 class Deaths(ParserWindow):
     """Tracks spell casting, duration, and targets by name."""
 
@@ -30,6 +34,9 @@ class Deaths(ParserWindow):
         self.track = {}
         self.playerName = "unknown"      # I don't think we have this already
         self.previousLine = ""
+
+        # read known timers
+        self.npcRespawnTimers = read_npc_respawn_timers()
 
     def parse(self, timestamp, text):
         """
@@ -85,19 +92,46 @@ class Deaths(ParserWindow):
             # if we have a registered death timestamp then we use that instead of the time of the
             # 'hail'
             if mobName in self.track:
-                message = "{0} died on <t:{1}> killed by {2}".format(
+                epoch_time = self.logTimeToUnixSeconds(self.track[mobName]['timestamp'])
+                message = "{0} died on <t:{1}> killed by {2}.".format(
                     mobName, 
-                    self.logTimeToUnixSeconds(self.track[mobName]['timestamp']),
+                    epoch_time,
                     self.track[mobName]['killer'],
                 )
             else:
                 # we only know of the 'Hail' log message, no known time of death
-                message = "{0} corpse hailed by {1} on <t:{2}> killed by {3}".format(
+                epoch_time = self.logTimeToUnixSeconds(timestamp)
+                message = "{0} corpse hailed by {1} on <t:{2}> killed by {3}.".format(
                     mobName,
                     self.playerName,
-                    self.logTimeToUnixSeconds(timestamp),
+                    epoch_time,
                     "unknown"
                 )
+            
+            # add respawn info to the message.
+            if mobName in self.npcRespawnTimers:
+                message += " Respawn time: {0}".format(self.npcRespawnTimers[mobName]['respawn_time'])
+                respawn_in_seconds = convert_to_seconds(self.npcRespawnTimers[mobName]['respawn_time'])
+                if convert_to_seconds(self.npcRespawnTimers[mobName]['variance']) != 0:
+                    message += " with variance {0}".format(self.npcRespawnTimers[mobName]['variance'])
+                    variance_in_seconds = convert_to_seconds(self.npcRespawnTimers[mobName]['variance'])
+                    message += ". Mob will respawn between <t:{0}> and <t:{1}>".format(
+                        epoch_time + respawn_in_seconds - variance_in_seconds,
+                        epoch_time + respawn_in_seconds + variance_in_seconds,
+                    )
+                    message += ". Which is between <t:{0}:R> and <t:{1}:R>".format(
+                        epoch_time + respawn_in_seconds - variance_in_seconds,
+                        epoch_time + respawn_in_seconds + variance_in_seconds,
+                    )
+                else:
+                    message += ". Mob will respawn on <t:{0}>".format(
+                        epoch_time + respawn_in_seconds
+                    )
+                    message += ". Which is in <t:{0}:R>".format(
+                        epoch_time + respawn_in_seconds
+                    )
+            else:
+                message += " No respawn timers known by sender."
 
             if config.data['deaths']['discord_webhook_url']:
                 # print("sending to "+config.data['deaths']['discord_webhook_url'])
@@ -115,3 +149,35 @@ class Deaths(ParserWindow):
         delta = datetime.datetime.now()-datetime.datetime.utcnow() 
         timestamp = timestamp - delta
         return calendar.timegm(timestamp.timetuple())
+
+def read_npc_respawn_timers():
+    """ Returns a dictionary of NPC timers by k, v ->.. """
+    
+    npcs = {}
+    with open('data/npcs/respawn_time.txt') as npc_file:
+        for line in npc_file:
+            if line[0] == "#":
+                continue
+            values = line.strip().split(';')
+            name = values[0]
+            respawn_time = values[1]
+            variance = values[2]
+            # we expect the respawn time in this format: mobname;respawn;variance
+            # Lord Nagafen;7 days;8 hours
+
+            # convert times to seconds
+            # respawnInSeconds = convert_to_seconds(respawnTime)
+            # varianceInSeconds = convert_to_seconds(variance)
+            # print("{0} {1} {2}".format(name, respawnTime, variance))
+            npcs[name] = { 'respawn_time': respawn_time, 'variance': variance }
+    return npcs
+
+def convert_to_seconds(text: str) -> int:
+    seconds = 0
+    if DAYS_MATCHER.match(text):
+        seconds += int(DAYS_MATCHER.match(text).groupdict()['days']) * 86400
+    if HOURS_MATCHER.match(text):
+        seconds += int(HOURS_MATCHER.match(text).groupdict()['hours']) * 3600
+    if MINS_MATCHER.match(text):
+        seconds += int(MINS_MATCHER.match(text).groupdict()['minutes']) * 60
+    return seconds
