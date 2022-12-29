@@ -3,3 +3,4 @@ Ayillish;8 hours;0
 Lord Nagafen;7 days;8 hours
 Lady Vox;7 days;8 hours
 Casalen;3 days;8 hours
+Lodizal;18 hours;1 hour

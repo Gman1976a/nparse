@@ -21,12 +21,12 @@ DAYS_MATCHER  = re.compile(r"(?P<days>\d+)\s*days")
 HOURS_MATCHER = re.compile(r"(?P<hours>\d+)\s*hour")
 MINS_MATCHER = re.compile(r"(?P<minutes>\d+)\s*min")
 
-class Deaths(ParserWindow):
+class TimeOfDeath(ParserWindow):
     """Tracks spell casting, duration, and targets by name."""
 
     def __init__(self):
         super().__init__()
-        self.name = 'deaths'
+        self.name = 'time_of_death'
         self.setWindowTitle(self.name.title())
         self.set_title(self.name.title())
 
@@ -133,10 +133,10 @@ class Deaths(ParserWindow):
             else:
                 message += " No respawn timers known by sender."
 
-            if config.data['deaths']['discord_webhook_url']:
+            if config.data['time_of_death']['discord_webhook_url']:
                 # print("sending to "+config.data['deaths']['discord_webhook_url'])
                 try:
-                    webhook = SyncWebhook.from_url(config.data['deaths']['discord_webhook_url'])
+                    webhook = SyncWebhook.from_url(config.data['time_of_death']['discord_webhook_url'])
                     webhook.send(message)
                 except ValueError as e:
                     print("wrong webhook URL")

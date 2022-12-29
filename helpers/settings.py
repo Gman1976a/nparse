@@ -383,17 +383,17 @@ class SettingsWindow(QDialog):
         stacked_widgets.append(('Appearance', appearance_settings))
 
         # Death logger Settings
-        deaths_settings = QFrame()
+        time_of_death_settings = QFrame()
         dsl = QFormLayout()
         dsl.addRow(SettingsHeader('general'))
         discord_webhook_url = QLineEdit()
-        discord_webhook_url.setObjectName('deaths:discord_webhook_url')
+        discord_webhook_url.setObjectName('time_of_death:discord_webhook_url')
         dsl.addRow(
             'Discord Webhook URL',
             discord_webhook_url
         )
-        deaths_settings.setLayout(dsl)
-        stacked_widgets.append(('Deaths', deaths_settings))
+        time_of_death_settings.setLayout(dsl)
+        stacked_widgets.append(('Time of Death', time_of_death_settings))
 
         return stacked_widgets
 
