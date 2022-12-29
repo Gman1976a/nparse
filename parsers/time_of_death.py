@@ -70,9 +70,10 @@ class TimeOfDeath(ParserWindow):
                 killerName = SLAIN_MATCHER.match(text).groupdict()['player']
                 print("2 {0} slain on {1} by {2}".format(mobName, timestamp, killerName))
 
-        # parsing 2022-12-23 20:34:59.759560:[16 Paladin] Sildiin (High Elf)
+        # parsing 2022-12-23 20:34:59.759560:[16 Paladin] Soandso (High Elf)
         # parsing 2022-12-23 20:34:59.759560:There are 88 players in East Commonlands.
-        elif ZONE_MATCHER.match(text) and WHO_MATCHER.match(self.previousLine):
+        elif ZONE_MATCHER.match(text) and ZONE_MATCHER.match(text).groupdict()['zone'] != 'EverQuest' and WHO_MATCHER.match(self.previousLine):
+            # triggered by "/who" command for this zone only
             self.playerName = WHO_MATCHER.match(self.previousLine).groupdict()['player']
             print("I am {0}".format(self.playerName))
 
