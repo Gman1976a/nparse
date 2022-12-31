@@ -33,6 +33,7 @@ class TimeOfDeath(ParserWindow):
         # keep track of which mob dies when
         self.track = {}
         self.playerName = "unknown"      # I don't think we have this already
+        self.zoneName   = None
         self.previousLine = ""
 
         # read known timers
@@ -75,7 +76,8 @@ class TimeOfDeath(ParserWindow):
         elif ZONE_MATCHER.match(text) and ZONE_MATCHER.match(text).groupdict()['zone'] != 'EverQuest' and WHO_MATCHER.match(self.previousLine):
             # triggered by "/who" command for this zone only
             self.playerName = WHO_MATCHER.match(self.previousLine).groupdict()['player']
-            print("I am {0}".format(self.playerName))
+            self.zoneName = ZONE_MATCHER.match(text).groupdict()['zone']
+            print("I am {0} in zone {1}".format(self.playerName, self.zoneName))
 
         # did we register a kill?
         if mobName:
@@ -108,6 +110,9 @@ class TimeOfDeath(ParserWindow):
                     epoch_time,
                     "unknown"
                 )
+
+            if self.zoneName is not None:
+                message += " In zone {0}.".format(self.zoneName)
             
             # add respawn info to the message.
             if mobName in self.npcRespawnTimers:
