@@ -263,7 +263,7 @@ def verify_settings():
         )
     data['time_of_death']['toggled'] = get_setting(
         data['time_of_death'].get('toggled', True),
-        False
+        True
         )
     data['time_of_death']['discord_webhook_url'] = get_setting(
         data['time_of_death'].get('discord_webhook_url', False),

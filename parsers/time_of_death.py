@@ -39,6 +39,16 @@ class TimeOfDeath(ParserWindow):
         # read known timers
         self.npcRespawnTimers = read_npc_respawn_timers()
 
+    def toggle(self, _=None):
+        # nothing to show in this parser window
+        # disabled the hide and slow methods
+        if self.isVisible():
+            config.data[self.name]['toggled'] = False
+        else:
+            self.set_flags()
+            config.data[self.name]['toggled'] = True
+        config.save()
+
     def parse(self, timestamp, text):
         """
         Parse:
